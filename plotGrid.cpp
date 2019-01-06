@@ -34,13 +34,15 @@ SDLInterface::~SDLInterface()
 }
 bool SDLInterface::quit()
 {
-	while( SDL_PollEvent( &e ) != 0 ) {
+	while( SDL_PollEvent( &e ) != 0) {
 		//User requests quit
 		if( e.type == SDL_QUIT )
-		return true;
+			return true;
 	}
+	return false;
 }
-void SDLInterface::plotGrid( vector<double> u, vector<double> v)
+
+void SDLInterface::plotGrid( double* u, double* v)
 {
 
 

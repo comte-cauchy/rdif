@@ -1,0 +1,252 @@
+#include <cstdlib>
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include "plotGrid.hpp"
+#include <cmath>
+#include <omp.h>
+using namespace std;
+
+int main(int argc, char* argv[])
+{
+	//parameters
+	const unsigned long nx = 256;
+	const unsigned long ny = 256;
+	const unsigned long nz = 256;
+	const double dimx = .5;
+	const double dimy = .5;
+	const double dimz = .5;
+	const double dt = .8;	
+
+	const double ru = 2e-4;
+	const double rv = 1e-4;
+	const double f = 0.03;
+	const double k = 0.06;
+	 
+	const unsigned long maxiter = (argc>1?atoi(argv[1]):100);
+		
+	//init
+	const unsigned long n = nx*ny*nz;
+	const int dx = 1;
+	const int dy = nx;
+	const long dz = nx*ny;
+
+	const double hinvx = 2*nx/dimx;
+	const double hinvy = 2*ny/dimy;
+	const double hinvz = 2*nz/dimz;
+	
+	//vector<double> u(n,1.0);
+	//vector<double> v(n,0.0);
+	//vector<double> u_old(u);
+	//vector<double> v_old(v);
+	//vector<double> w(n,-2*dt*(hinvx+hinvy+hinvz));
+	
+	double* tmp;
+	double* u = (new double[n+2*nx*ny]())+nx*ny;
+	double* v = (new double[n+2*nx*ny]())+nx*ny;
+	double* u_old = (new double[n+2*nx*ny]())+nx*ny;
+	double* v_old = (new double[n+2*nx*ny]())+nx*ny;
+	double* wu = new double[n];
+	double* wv = new double[n];
+	double* wxpu = new double[n];
+	double* wxpv = new double[n];
+	double* wxnu = new double[n];
+	double* wxnv = new double[n];
+	double* wypu = new double[n];
+	double* wypv = new double[n];
+	double* wynu = new double[n];
+	double* wynv = new double[n];
+	double* wzpu = new double[n];
+	double* wzpv = new double[n];
+	double* wznu = new double[n];
+	double* wznv = new double[n];
+	for (int i = 0;i<n;i++)
+		u[i]=1.0;
+	for (int i = 0;i<n;i++)
+		v[i]=0.0;
+	for (int i = 0;i<n;i++)
+		u_old[i]=u[i];
+	for (int i = 0;i<n;i++)
+		v_old[i]=v[i];
+	for (int i = 0;i<n;i++)
+		wu[i]=-2*dt*(hinvx+hinvy+hinvz);
+	for (int i = 0;i<n;i++)
+		wv[i]=-2*dt*(hinvx+hinvy+hinvz);
+	for (int i = 0;i<n;i++)
+		wxpu[i]=dt*ru*hinvx;
+	for (int i = 0;i<n;i++)
+		wxpv[i]=dt*rv*hinvx;
+	for (int i = 0;i<n;i++)
+		wxnu[i]=dt*ru*hinvx;
+	for (int i = 0;i<n;i++)
+		wxnv[i]=dt*rv*hinvx;
+	for (int i = 0;i<n;i++)
+		wypu[i]=dt*ru*hinvy;
+	for (int i = 0;i<n;i++)
+		wypv[i]=dt*rv*hinvy;
+	for (int i = 0;i<n;i++)
+		wynu[i]=dt*ru*hinvy;
+	for (int i = 0;i<n;i++)
+		wynv[i]=dt*rv*hinvy;
+	for (int i = 0;i<n;i++)
+		wzpu[i]=dt*ru*hinvz;
+	for (int i = 0;i<n;i++)
+		wzpv[i]=dt*rv*hinvz;
+	for (int i = 0;i<n;i++)
+		wznu[i]=dt*ru*hinvz;
+	for (int i = 0;i<n;i++)
+		wznv[i]=dt*rv*hinvz;
+
+	
+	for(int z = 0;z<nz;z++)
+	{
+		for(int y = 0;y<ny;y++)
+		{
+			for(int x = 0;x<nx;x++)
+			{
+				unsigned long i = x + nx*y + nx*ny*z;
+				wu[i] += dt*((x==0?hinvx:0)+(x==nx-1?hinvx:0) + (y==0?hinvy:0)+(y==ny-1?hinvy:0) + (z==0?hinvz:0)+(z==nz-1?hinvz:0));
+				wv[i] += dt*((x==0?hinvx:0)+(x==nx-1?hinvx:0) + (y==0?hinvy:0)+(y==ny-1?hinvy:0) + (z==0?hinvz:0)+(z==nz-1?hinvz:0));
+				if (x==0)
+				{
+					wxnu[i]=0;
+					wxnv[i]=0;
+				}
+				if (y==0)
+				{
+					wynu[i]=0;
+					wynv[i]=0;
+				}
+				if (z==0)
+				{
+					wznu[i]=0;
+					wznv[i]=0;
+				}
+				if (x==(nx-1))
+				{
+					wxpu[i]=0;
+					wxpv[i]=0;
+				}
+				if (y==(ny-1))
+				{
+					wypu[i]=0;
+					wypv[i]=0;
+				}
+				if (z==(nz-1))
+				{
+					wzpu[i]=0;
+					wzpv[i]=0;
+				}
+			}
+		}
+	}
+	for (int i = 0;i<n;i++)
+		wu[i]*=ru;
+	for (int i = 0;i<n;i++)
+		wv[i]*=rv;
+	
+	SDLInterface plotter(nx,ny,nz,nz/2);
+
+	for(int z = 0;z<nz;z++)
+	{
+		for(int y = 118;y<138;y++)
+		{
+			for(int x = 118;x<138;x++)
+			{
+				unsigned long i = x + nx*y + nx*ny*z;
+				u[i] = 0.5;
+				v[i] = 0.25;
+			}
+		}
+	}
+	
+	for(int i = 0;i<n;i++)
+	{
+		double r1 = (double)rand()/RAND_MAX;
+		double r2 = (double)rand()/RAND_MAX;
+		double tmp = sqrt(-2*log(r1));
+		u[i]*=(1+(1+tmp*sin(2*M_PI*r2))*0.01);
+		v[i]*=(1+(1+tmp*cos(2*M_PI*r2))*0.01);
+		u[i] = min(1.0,max(0.0,u[i]));
+		v[i] = min(1.0,max(0.0,v[i]));
+	}
+
+
+	//iterations
+	double start = omp_get_wtime();
+//	cout << iter < maxiter << ' ' << plotter.quit() << endl;
+	for(unsigned int iter = 0;iter<maxiter && !plotter.quit();iter++)
+	//for(unsigned int iter = 0;iter<maxiter ;iter++)
+	{
+		if (!(iter%100))
+			plotter.plotGrid(u,v);
+		
+		tmp = u;
+		u = u_old;
+		u_old = tmp;
+		tmp = v;
+		v = v_old;
+		v_old = tmp;
+		
+		for(int i = 0;i<n;i++)
+		{
+			double reaction_quantity = u[i]*v[i]*v[i];//2
+			u[i] = u_old[i] + wu[i]*u_old[i] ;
+			v[i] = v_old[i] + wv[i]*v_old[i] ;//14;
+		}
+		for(int i = 0;i<n;i++)
+		{
+			u[i] += wxpu[i]*u_old[i+dx];    
+			v[i] += wxpv[i]*v_old[i+dx];
+		} 
+		for(int i = 0;i<n;i++)
+		{
+			u[i] += wypu[i]*u_old[i+dy];
+			v[i] += wypv[i]*v_old[i+dy];
+		} 
+		
+		if (nz > 1)
+		for(int i = 0;i<n;i++)
+		{
+			u[i] += wzpu[i]*u_old[i+dz];
+			v[i] += wzpv[i]*v_old[i+dz];
+		} 
+		
+		for(int i = 0;i<n;i++)
+		{
+			u[i] += wxnu[i]*u_old[i-dx];
+			v[i] += wxnv[i]*v_old[i-dx];
+		} 
+		
+		for(int i = 0;i<n;i++)
+		{
+			u[i] += wynu[i]*u_old[i-dy];
+                	v[i] += wynv[i]*v_old[i-dy];
+		} 
+		if (nz > 1)
+		for(int i = 0;i<n;i++)
+		{
+			u[i] += wznu[i]*u_old[i-dz];
+			v[i] += wznv[i]*v_old[i-dz];
+		} 
+		
+		
+		//cout << "Applying reaction and feed terms"<<endl;
+		for(int i = 0;i<n;i++)
+		{	double reaction_quantity = u[i]*v[i]*v[i];//2
+			u[i] -= dt*(reaction_quantity - f*(1-u[i]));//5
+			v[i] += dt*(reaction_quantity - (f+k)*v[i]);//5
+		}
+		
+
+	}
+	double time = omp_get_wtime()-start;
+	unsigned long long ops = maxiter*(16l*nx*ny*nz+8l*nx*ny*(nz-1l)+8l*nx*(ny-1)*nz+8l*(nx-1l)*ny*nz);
+    	cout << "Time [s]:" << time << endl;
+    	cout << "GFLOP:" << ops/1e9 << endl;
+	cout << "GFLOP/s:" << ops/time/1e9 << endl;
+	
+	plotter.plotGrid(u,v);
+	
+	return 0;
+}

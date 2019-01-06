@@ -13,10 +13,10 @@ int main(int argc, char* argv[])
 	const unsigned long nx = 256;
 	const unsigned long ny = 256;
 	const unsigned long nz = 256;
-	const double dimx = 1.0;
-	const double dimy = 1.0;
-	const double dimz = 1.0;
-	const double dt = .8;	
+	const double dimx = .5;
+	const double dimy = .5;
+	const double dimz = .5;
+	const double dt = 1;	
 
 	const double ru = 2e-4;
 	const double rv = 1e-4;
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 	
 	SDLInterface plotter(nx,ny,nz,nz/2);
 
-	for(int z = 118;z<138;z++)
+	for(int z = 0;z<nz;z++)
 	{
 		for(int y = 118;y<138;y++)
 		{
@@ -94,16 +94,16 @@ int main(int argc, char* argv[])
 		}
 	}
 	
-	//for(int i = 0;i<n;i++)
-	//{
-	//	double r1 = (double)rand()/RAND_MAX;
-	//	double r2 = (double)rand()/RAND_MAX;
-	//	double tmp = sqrt(-2*log(r1));
-	//	u[i]*=(1+(1+tmp*sin(2*M_PI*r2))*0.01);
-	//	v[i]*=(1+(1+tmp*cos(2*M_PI*r2))*0.01);
-	//	u[i] = min(1.0,max(0.0,u[i]));
-	//	v[i] = min(1.0,max(0.0,v[i]));
-	//}
+	for(int i = 0;i<n;i++)
+	{
+		double r1 = (double)rand()/RAND_MAX;
+		double r2 = (double)rand()/RAND_MAX;
+		double tmp = sqrt(-2*log(r1));
+		u[i]*=(1+(1+tmp*sin(2*M_PI*r2))*0.01);
+		v[i]*=(1+(1+tmp*cos(2*M_PI*r2))*0.01);
+		u[i] = min(1.0,max(0.0,u[i]));
+		v[i] = min(1.0,max(0.0,v[i]));
+	}
 
 
 	//iterations
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
 	//for(unsigned int iter = 0;iter<maxiter ;iter++)
 	{
 		//cout << iter << endl;
-		if (!(iter%50))
+		if (!(iter%100))
 			plotter.plotGrid(u,v);
 		
 		tmp = u;

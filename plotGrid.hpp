@@ -11,7 +11,7 @@ class SDLInterface
 public:
 	SDLInterface(unsigned nx, unsigned ny, unsigned nz=1, unsigned z=0);
 	~SDLInterface();
-	void plotGrid(vector<double> u, vector<double> v);
+	void plotGrid(double* u, double* v);
 	bool quit();
 private:
 	const unsigned SCREEN_WIDTH;
